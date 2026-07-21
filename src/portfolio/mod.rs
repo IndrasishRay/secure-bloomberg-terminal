@@ -1,6 +1,7 @@
 pub mod risk_guard;
 
 use crate::db::{Database, Position, Trade};
+use crate::security::audit;
 use anyhow::Result;
 
 pub struct PortfolioManager {
@@ -40,7 +41,9 @@ impl PortfolioManager {
             }
         }
 
-        self.db.create_trade(self.portfolio_id, symbol, "buy", quantity, price)
+        let trade = self.db.create_trade(self.portfolio_id, symbol, "buy", quantity, price)?;
+        audit::log_event(&self.db, "BUY", "user", &format!("{} {} @ ${:.2}", quantity, symbol, price)).ok();
+        Ok(trade)
     }
 
     pub fn sell(&self, symbol: &str, quantity: f64, price: f64) -> Result<Trade> {
@@ -68,7 +71,9 @@ impl PortfolioManager {
             self.db.update_position(position.id, remaining, position.avg_cost, val)?;
         }
 
-        self.db.create_trade(self.portfolio_id, symbol, "sell", quantity, price)
+        let trade = self.db.create_trade(self.portfolio_id, symbol, "sell", quantity, price)?;
+        audit::log_event(&self.db, "SELL", "user", &format!("{} {} @ ${:.2}", quantity, symbol, price)).ok();
+        Ok(trade)
     }
 
     pub fn get_positions(&self) -> Vec<Position> {

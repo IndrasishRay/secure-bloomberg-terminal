@@ -40,7 +40,7 @@ pub fn check_status(db: &Database) -> OnboardingState {
     }
 }
 
-pub fn run_onboarding(db: &Arc<Database>, crypto: &Crypto) -> Result<bool> {
+pub fn run_onboarding(db: &Arc<Database>, _crypto: &Crypto) -> Result<bool> {
     let state = check_status(db);
     if state.onboarding_complete {
         println!("✓ Onboarding already complete");

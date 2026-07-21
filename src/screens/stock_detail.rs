@@ -14,6 +14,7 @@ pub struct StockDetail {
     sell_amount: String,
     focus: Focus,
     error: Option<String>,
+    message: Option<String>,
 }
 
 enum Focus {
@@ -32,6 +33,7 @@ impl StockDetail {
             sell_amount: String::new(),
             focus: Focus::None,
             error: None,
+            message: None,
         }
     }
 
@@ -39,6 +41,22 @@ impl StockDetail {
         self.loading = true;
         self.quote = get_stock_quote(&self.symbol).await.ok();
         self.loading = false;
+    }
+
+    pub fn current_price(&self) -> Option<f64> {
+        self.quote.as_ref().map(|q| q.price)
+    }
+
+    pub fn buy_qty(&self) -> f64 {
+        self.buy_amount.parse().unwrap_or(0.0)
+    }
+
+    pub fn sell_qty(&self) -> f64 {
+        self.sell_amount.parse().unwrap_or(0.0)
+    }
+
+    pub fn set_message(&mut self, msg: String) {
+        self.message = Some(msg);
     }
 }
 
@@ -118,9 +136,13 @@ impl Screen for StockDetail {
         }
 
         if let Some(ref err) = self.error {
-            let err_w = Paragraph::new(err.as_str())
-                .style(Style::default().fg(Color::Red));
+            let err_w = Paragraph::new(err.as_str()).style(Style::default().fg(Color::Red));
             f.render_widget(err_w, chunks[4]);
+        }
+        if let Some(ref msg) = self.message {
+            let msg_w =
+                Paragraph::new(msg.as_str()).style(Style::default().fg(Color::Rgb(0xFF, 0xB0, 0x00)));
+            f.render_widget(msg_w, chunks[4]);
         }
 
         let buy_style = if matches!(self.focus, Focus::Buy) {
@@ -150,7 +172,7 @@ impl Screen for StockDetail {
             .block(sell_block);
         f.render_widget(sell_p, chunks[3]);
 
-        let footer = Paragraph::new(" Tab:Toggle buy/sell  1-9:Qty  Enter:Execute  /:Search  q:Back ")
+        let footer = Paragraph::new(" Tab:Toggle buy/sell  Enter:Execute  q:Back ")
             .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
         f.render_widget(footer, Rect::new(area.x, area.y + area.height - 1, area.width, 1));
 
@@ -171,23 +193,46 @@ impl Screen for StockDetail {
                 };
                 None
             }
-            crossterm::event::KeyCode::Char(c) if c.is_ascii_digit() && c != '0' => {
-                let amount = c.to_digit(10).unwrap_or(0) as f64;
+            crossterm::event::KeyCode::Char(c) if c.is_ascii_digit() || c == '.' => {
                 match self.focus {
                     Focus::Buy => {
-                        self.buy_amount = amount.to_string();
-                        // In a real app, trigger buy action
-                        Some(AppAction::Buy(self.symbol.clone()))
+                        self.buy_amount.push(c);
                     }
                     Focus::Sell => {
-                        self.sell_amount = amount.to_string();
-                        Some(AppAction::Sell(self.symbol.clone()))
+                        self.sell_amount.push(c);
                     }
-                    Focus::None => None,
+                    Focus::None => {}
                 }
+                None
+            }
+            crossterm::event::KeyCode::Backspace => {
+                match self.focus {
+                    Focus::Buy => {
+                        self.buy_amount.pop();
+                    }
+                    Focus::Sell => {
+                        self.sell_amount.pop();
+                    }
+                    Focus::None => {}
+                }
+                None
             }
             crossterm::event::KeyCode::Enter => {
-                // Execute trade
+                match self.focus {
+                    Focus::Buy => {
+                        let qty = self.buy_amount.parse::<f64>().unwrap_or(0.0);
+                        if qty > 0.0 {
+                            return Some(AppAction::Buy(self.symbol.clone()));
+                        }
+                    }
+                    Focus::Sell => {
+                        let qty = self.sell_amount.parse::<f64>().unwrap_or(0.0);
+                        if qty > 0.0 {
+                            return Some(AppAction::Sell(self.symbol.clone()));
+                        }
+                    }
+                    Focus::None => {}
+                }
                 None
             }
             _ => None,
