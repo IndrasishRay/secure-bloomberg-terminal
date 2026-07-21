@@ -85,8 +85,12 @@ impl Database {
         Ok(db)
     }
 
+    fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
+        self.conn.lock().expect("db mutex poisoned")
+    }
+
     fn initialize(&self) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute_batch(
             "
             CREATE TABLE IF NOT EXISTS portfolios (
@@ -178,7 +182,7 @@ impl Database {
 
     // Users
     pub fn create_user(&self, email: &str, password_hash: &str) -> Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT INTO users (email, password_hash, verification_code) VALUES (?1, ?2, ?3)",
             params![email, password_hash, Self::generate_code()],
@@ -187,7 +191,7 @@ impl Database {
     }
 
     pub fn get_user_by_email(&self, email: &str) -> Option<(i64, String, i64, Option<String>)> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT id, password_hash, email_verified, verification_code FROM users WHERE email = ?1")
             .ok()?;
@@ -203,7 +207,7 @@ impl Database {
     }
 
     pub fn verify_email(&self, user_id: i64) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "UPDATE users SET email_verified = 1 WHERE id = ?1",
             params![user_id],
@@ -213,7 +217,7 @@ impl Database {
 
     // Bank
     pub fn set_bank_details(&self, user_id: i64, name: &str, acct: &str, routing: &str, acct_type: &str) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT OR REPLACE INTO bank_details (user_id, bank_name, account_number, routing_number, account_type) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![user_id, name, acct, routing, acct_type],
@@ -223,7 +227,7 @@ impl Database {
 
     // Wallet
     pub fn set_wallet(&self, user_id: i64, address: &str, wallet_type: &str) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT OR REPLACE INTO wallets (user_id, address, wallet_type) VALUES (?1, ?2, ?3)",
             params![user_id, address, wallet_type],
@@ -233,7 +237,7 @@ impl Database {
 
     // Tutorial
     pub fn complete_tutorial(&self, user_id: i64, tutorial_id: &str) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT OR REPLACE INTO tutorial_progress (user_id, tutorial_id, completed, completed_at) VALUES (?1, ?2, 1, datetime('now'))",
             params![user_id, tutorial_id],
@@ -243,7 +247,7 @@ impl Database {
 
     // Portfolio
     pub fn create_portfolio(&self, name: &str, cash: f64) -> Result<Portfolio> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT INTO portfolios (name, cash_balance) VALUES (?1, ?2)",
             params![name, cash],
@@ -263,7 +267,7 @@ impl Database {
     }
 
     pub fn get_portfolio(&self, id: i64) -> Option<Portfolio> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn.prepare("SELECT * FROM portfolios WHERE id = ?1").ok()?;
         stmt.query_row(params![id], |row| {
             Ok(Portfolio {
@@ -278,7 +282,7 @@ impl Database {
     }
 
     pub fn update_cash(&self, portfolio_id: i64, cash: f64) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "UPDATE portfolios SET cash_balance = ?1, updated_at = datetime('now') WHERE id = ?2",
             params![cash, portfolio_id],
@@ -288,7 +292,7 @@ impl Database {
 
     // Positions
     pub fn create_position(&self, portfolio_id: i64, symbol: &str, qty: f64, cost: f64) -> Result<Position> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let val = (qty * cost * 100.0).round() / 100.0;
         conn.execute(
             "INSERT INTO positions (portfolio_id, symbol, quantity, avg_cost, current_value) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -312,7 +316,7 @@ impl Database {
     }
 
     pub fn get_positions(&self, portfolio_id: i64) -> Vec<Position> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT * FROM positions WHERE portfolio_id = ?1 ORDER BY symbol")
             .unwrap();
@@ -334,7 +338,7 @@ impl Database {
     }
 
     pub fn get_position(&self, portfolio_id: i64, symbol: &str) -> Option<Position> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT * FROM positions WHERE portfolio_id = ?1 AND symbol = ?2")
             .ok()?;
@@ -354,7 +358,7 @@ impl Database {
     }
 
     pub fn update_position(&self, id: i64, qty: f64, cost: f64, val: f64) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "UPDATE positions SET quantity = ?1, avg_cost = ?2, current_value = ?3, updated_at = datetime('now') WHERE id = ?4",
             params![qty, cost, val, id],
@@ -363,14 +367,14 @@ impl Database {
     }
 
     pub fn delete_position(&self, id: i64) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute("DELETE FROM positions WHERE id = ?1", params![id])?;
         Ok(())
     }
 
     // Trades
     pub fn create_trade(&self, portfolio_id: i64, symbol: &str, side: &str, qty: f64, price: f64) -> Result<Trade> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT INTO trades (portfolio_id, symbol, side, quantity, price, status) VALUES (?1, ?2, ?3, ?4, ?5, 'filled')",
             params![portfolio_id, symbol, side, qty, price],
@@ -393,7 +397,7 @@ impl Database {
     }
 
     pub fn get_trades(&self, portfolio_id: i64) -> Vec<Trade> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT * FROM trades WHERE portfolio_id = ?1 ORDER BY timestamp DESC")
             .unwrap();
@@ -416,7 +420,7 @@ impl Database {
 
     // News
     pub fn save_news(&self, title: &str, source: &str, url: &str, summary: &str, published: Option<&str>) -> Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT INTO news_articles (title, source, url, summary, published_at) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![title, source, url, summary, published],
@@ -425,7 +429,7 @@ impl Database {
     }
 
     pub fn get_news(&self, limit: i64) -> Vec<NewsArticle> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT * FROM news_articles ORDER BY published_at DESC LIMIT ?1")
             .unwrap();
@@ -446,7 +450,7 @@ impl Database {
 
     // Research
     pub fn save_paper(&self, title: &str, authors: &str, abstract_: &str, url: &str, published: Option<&str>) -> Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT INTO research_papers (title, authors, abstract_, url, published_at) VALUES (?1, ?2, ?3, ?4, ?5)",
             params![title, authors, abstract_, url, published],
@@ -455,7 +459,7 @@ impl Database {
     }
 
     pub fn get_papers(&self, limit: i64) -> Vec<ResearchPaper> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT * FROM research_papers ORDER BY published_at DESC LIMIT ?1")
             .unwrap();
@@ -476,7 +480,7 @@ impl Database {
 
     // Audit
     pub fn log_audit(&self, action: &str, user: &str, details: &str, ip: &str) -> Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         conn.execute(
             "INSERT INTO audit_logs (action, user, details, ip_address) VALUES (?1, ?2, ?3, ?4)",
             params![action, user, details, ip],
@@ -485,7 +489,7 @@ impl Database {
     }
 
     pub fn get_audit_logs(&self, limit: i64) -> Vec<AuditLog> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.lock();
         let mut stmt = conn
             .prepare("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT ?1")
             .unwrap();

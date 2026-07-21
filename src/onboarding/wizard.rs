@@ -93,28 +93,30 @@ fn register_user(db: &Database) -> Result<()> {
     println!("(Use dummy data — this is a prototype)");
     print!("Email: ");
     io::stdout().flush()?;
-    let mut email = String::new();
-    io::stdin().read_line(&mut email)?;
-    let email = email.trim();
-    if email.is_empty() {
-        let email = "demo@bloomberg.local";
-        println!("  Using: {email}");
-    }
+    let mut email_buf = String::new();
+    io::stdin().read_line(&mut email_buf)?;
+    let email = if email_buf.trim().is_empty() {
+        println!("  Using: demo@bloomberg.local");
+        "demo@bloomberg.local"
+    } else {
+        email_buf.trim()
+    };
 
     print!("Password: ");
     io::stdout().flush()?;
-    let mut pw = String::new();
-    io::stdin().read_line(&mut pw)?;
-    let pw = pw.trim();
-    if pw.is_empty() {
-        let pw = "Demo1234";
-        println!("  Using: {pw}");
-    }
+    let mut pw_buf = String::new();
+    io::stdin().read_line(&mut pw_buf)?;
+    let pw = if pw_buf.trim().is_empty() {
+        println!("  Using: Demo1234");
+        "Demo1234"
+    } else {
+        pw_buf.trim()
+    };
 
     let salt = Crypto::generate_salt();
     let hash = Crypto::hash_password(pw, &salt);
-        let hash_str = format!("{}{}", hex::encode(salt), hex::encode(hash));
-        db.create_user(email, &hash_str)?;
+    let hash_str = format!("{}{}", hex::encode(salt), hex::encode(hash));
+    db.create_user(email, &hash_str)?;
     println!("✓ Account created\n");
     Ok(())
 }
