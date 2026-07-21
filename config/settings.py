@@ -27,5 +27,12 @@ class Settings(BaseSettings):
 
     db_path: str = DEFAULT_DB_PATH
 
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@bloomberg-terminal.com"
+    verification_code_expiry_minutes: int = 15
+
 
 settings = Settings()

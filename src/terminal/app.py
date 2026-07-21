@@ -136,8 +136,20 @@ class BloombergTerminal(App):
         self._current_screen: Optional[str] = None
 
     def on_mount(self) -> None:
-        self.push_screen("market_overview")
-        self._current_screen = "market_overview"
+        from src.onboarding.onboarding_flow import (
+            check_onboarding_status,
+            run_on_startup,
+        )
+
+        status = check_onboarding_status()
+        if not status["onboarding_complete"]:
+            def _on_done(success: bool) -> None:
+                self.push_screen("market_overview")
+                self._current_screen = "market_overview"
+            run_on_startup(self, callback=_on_done)
+        else:
+            self.push_screen("market_overview")
+            self._current_screen = "market_overview"
 
     def action_screen_market_overview(self) -> None:
         self._switch_screen("market_overview")

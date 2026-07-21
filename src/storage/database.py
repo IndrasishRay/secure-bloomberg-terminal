@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import sqlite3
-from contextlib import asynccontextmanager
+import threading
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import AsyncIterator, Optional
+from typing import Iterator, Optional
 
 from config.settings import settings
 from src.storage.models import (
@@ -177,16 +177,16 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
 class Database:
     def __init__(self, db_path: Optional[str] = None) -> None:
         self._db_path = db_path or settings.db_path
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
 
-    async def initialize(self) -> None:
+    def initialize(self) -> None:
         Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
-        async with self._connect() as conn:
+        with self._connect() as conn:
             for ddl in CREATE_TABLES:
                 conn.execute(ddl)
 
-    @asynccontextmanager
-    async def _connect(self) -> AsyncIterator[sqlite3.Connection]:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self._db_path)
         conn.row_factory = sqlite3.Row
         try:
@@ -198,171 +198,172 @@ class Database:
         finally:
             conn.close()
 
-    # Portfolio
-
-    async def create_portfolio(self, portfolio: Portfolio) -> int:
-        async with self._lock, self._connect() as conn:
+    def create_portfolio(self, name: str, cash_balance: float = 0.0) -> Portfolio:
+        with self._lock, self._connect() as conn:
             cur = conn.execute(
                 "INSERT INTO portfolios (name, cash_balance) VALUES (?, ?)",
-                (portfolio.name, portfolio.cash_balance),
+                (name, cash_balance),
             )
-            return cur.lastrowid
+            pid = cur.lastrowid
+        return Portfolio(id=pid, name=name, cash_balance=cash_balance)
 
-    async def get_portfolio(self, portfolio_id: int) -> Optional[Portfolio]:
-        async with self._connect() as conn:
+    def get_portfolio(self, portfolio_id: int) -> Optional[Portfolio]:
+        with self._connect() as conn:
             cur = conn.execute(
                 "SELECT * FROM portfolios WHERE id = ?", (portfolio_id,)
             )
             row = cur.fetchone()
             return _row_to_portfolio(row) if row else None
 
-    async def get_all_portfolios(self) -> list[Portfolio]:
-        async with self._connect() as conn:
+    def list_portfolios(self) -> list[Portfolio]:
+        with self._connect() as conn:
             cur = conn.execute("SELECT * FROM portfolios ORDER BY id")
             return [_row_to_portfolio(r) for r in cur.fetchall()]
 
-    async def update_portfolio(self, portfolio: Portfolio) -> None:
-        async with self._lock, self._connect() as conn:
+    def update_portfolio_cash(self, portfolio_id: int, cash_balance: float) -> None:
+        with self._lock, self._connect() as conn:
             conn.execute(
                 """UPDATE portfolios
-                   SET name = ?, cash_balance = ?, updated_at = datetime('now')
+                   SET cash_balance = ?, updated_at = datetime('now')
                    WHERE id = ?""",
-                (portfolio.name, portfolio.cash_balance, portfolio.id),
+                (cash_balance, portfolio_id),
             )
 
-    async def delete_portfolio(self, portfolio_id: int) -> None:
-        async with self._lock, self._connect() as conn:
+    def delete_portfolio(self, portfolio_id: int) -> None:
+        with self._lock, self._connect() as conn:
             conn.execute("DELETE FROM portfolios WHERE id = ?", (portfolio_id,))
 
-    # Position
-
-    async def create_position(self, position: Position) -> int:
-        async with self._lock, self._connect() as conn:
+    def create_position(
+        self, portfolio_id: int, symbol: str, quantity: float, avg_cost: float
+    ) -> Position:
+        current_value = round(quantity * avg_cost, 2)
+        with self._lock, self._connect() as conn:
             cur = conn.execute(
                 """INSERT INTO positions
                    (portfolio_id, symbol, quantity, avg_cost, current_value)
                    VALUES (?, ?, ?, ?, ?)""",
-                (
-                    position.portfolio_id,
-                    position.symbol,
-                    position.quantity,
-                    position.avg_cost,
-                    position.current_value,
-                ),
+                (portfolio_id, symbol.upper(), quantity, avg_cost, current_value),
             )
-            return cur.lastrowid
+            pos_id = cur.lastrowid
+        return Position(id=pos_id, portfolio_id=portfolio_id, symbol=symbol.upper(), quantity=quantity, avg_cost=avg_cost, current_value=current_value)
 
-    async def get_positions_for_portfolio(self, portfolio_id: int) -> list[Position]:
-        async with self._connect() as conn:
+    def get_positions_by_portfolio(self, portfolio_id: int) -> list[Position]:
+        with self._connect() as conn:
             cur = conn.execute(
                 "SELECT * FROM positions WHERE portfolio_id = ? ORDER BY symbol",
                 (portfolio_id,),
             )
             return [_row_to_position(r) for r in cur.fetchall()]
 
-    async def update_position(self, position: Position) -> None:
-        async with self._lock, self._connect() as conn:
+    def get_position_by_symbol(self, portfolio_id: int, symbol: str) -> Optional[Position]:
+        with self._connect() as conn:
+            cur = conn.execute(
+                "SELECT * FROM positions WHERE portfolio_id = ? AND symbol = ?",
+                (portfolio_id, symbol.upper()),
+            )
+            row = cur.fetchone()
+            return _row_to_position(row) if row else None
+
+    def update_position(self, position_id: int, quantity: float, avg_cost: float, current_value: float) -> None:
+        with self._lock, self._connect() as conn:
             conn.execute(
                 """UPDATE positions
                    SET quantity = ?, avg_cost = ?, current_value = ?
                    WHERE id = ?""",
-                (position.quantity, position.avg_cost, position.current_value, position.id),
+                (quantity, avg_cost, current_value, position_id),
             )
 
-    async def delete_position(self, position_id: int) -> None:
-        async with self._lock, self._connect() as conn:
+    def delete_position(self, position_id: int) -> None:
+        with self._lock, self._connect() as conn:
             conn.execute("DELETE FROM positions WHERE id = ?", (position_id,))
 
-    # Trade
-
-    async def create_trade(self, trade: Trade) -> int:
-        async with self._lock, self._connect() as conn:
+    def create_trade(
+        self, portfolio_id: int, symbol: str, side: str, quantity: float, price: float
+    ) -> Trade:
+        with self._lock, self._connect() as conn:
             cur = conn.execute(
                 """INSERT INTO trades
                    (portfolio_id, symbol, side, quantity, price, status)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (
-                    trade.portfolio_id,
-                    trade.symbol,
-                    trade.side,
-                    trade.quantity,
-                    trade.price,
-                    trade.status,
-                ),
+                   VALUES (?, ?, ?, ?, ?, 'filled')""",
+                (portfolio_id, symbol.upper(), side, quantity, price),
             )
-            return cur.lastrowid
+            trade_id = cur.lastrowid
+        return Trade(id=trade_id, portfolio_id=portfolio_id, symbol=symbol.upper(), side=side, quantity=quantity, price=price, status="filled")
 
-    async def get_trades_for_portfolio(self, portfolio_id: int) -> list[Trade]:
-        async with self._connect() as conn:
+    def get_trades_by_portfolio(self, portfolio_id: int) -> list[Trade]:
+        with self._connect() as conn:
             cur = conn.execute(
                 "SELECT * FROM trades WHERE portfolio_id = ? ORDER BY timestamp DESC",
                 (portfolio_id,),
             )
             return [_row_to_trade(r) for r in cur.fetchall()]
 
-    async def update_trade_status(self, trade_id: int, status: str) -> None:
-        async with self._lock, self._connect() as conn:
+    def update_trade_status(self, trade_id: int, status: str) -> None:
+        with self._lock, self._connect() as conn:
             conn.execute(
                 "UPDATE trades SET status = ? WHERE id = ?",
                 (status, trade_id),
             )
 
-    # NewsArticle
-
-    async def create_news_article(self, article: NewsArticle) -> int:
-        async with self._lock, self._connect() as conn:
+    def create_news_article(
+        self, title: str, source: str = "", url: str = "", summary: str = "", published_at: Optional[str] = None
+    ) -> int:
+        with self._lock, self._connect() as conn:
             cur = conn.execute(
                 """INSERT INTO news_articles
                    (title, source, url, summary, published_at)
                    VALUES (?, ?, ?, ?, ?)""",
-                (article.title, article.source, article.url, article.summary, article.published_at),
+                (title, source, url, summary, published_at),
             )
             return cur.lastrowid
 
-    async def get_recent_news(self, limit: int = 50) -> list[NewsArticle]:
-        async with self._connect() as conn:
+    def get_recent_news(self, limit: int = 50) -> list[NewsArticle]:
+        with self._connect() as conn:
             cur = conn.execute(
                 "SELECT * FROM news_articles ORDER BY published_at DESC LIMIT ?",
                 (limit,),
             )
             return [_row_to_news_article(r) for r in cur.fetchall()]
 
-    # ResearchPaper
-
-    async def create_research_paper(self, paper: ResearchPaper) -> int:
-        async with self._lock, self._connect() as conn:
+    def create_research_paper(
+        self, title: str, authors: str = "", abstract: str = "", url: str = "", published_at: Optional[str] = None
+    ) -> int:
+        with self._lock, self._connect() as conn:
             cur = conn.execute(
                 """INSERT INTO research_papers
                    (title, authors, abstract, url, published_at)
                    VALUES (?, ?, ?, ?, ?)""",
-                (paper.title, paper.authors, paper.abstract, paper.url, paper.published_at),
+                (title, authors, abstract, url, published_at),
             )
             return cur.lastrowid
 
-    async def get_recent_papers(self, limit: int = 50) -> list[ResearchPaper]:
-        async with self._connect() as conn:
+    def get_recent_papers(self, limit: int = 50) -> list[ResearchPaper]:
+        with self._connect() as conn:
             cur = conn.execute(
                 "SELECT * FROM research_papers ORDER BY published_at DESC LIMIT ?",
                 (limit,),
             )
             return [_row_to_research_paper(r) for r in cur.fetchall()]
 
-    # AuditLog
-
-    async def create_audit_log(self, log: AuditLog) -> int:
-        async with self._lock, self._connect() as conn:
+    def create_audit_log(
+        self, action: str, user: str = "system", details: str = "", ip_address: str = "127.0.0.1"
+    ) -> int:
+        with self._lock, self._connect() as conn:
             cur = conn.execute(
                 """INSERT INTO audit_logs
                    (action, user, details, ip_address)
                    VALUES (?, ?, ?, ?)""",
-                (log.action, log.user, log.details, log.ip_address),
+                (action, user, details, ip_address),
             )
             return cur.lastrowid
 
-    async def get_recent_audit_logs(self, limit: int = 100) -> list[AuditLog]:
-        async with self._connect() as conn:
+    def get_recent_audit_logs(self, limit: int = 100) -> list[AuditLog]:
+        with self._connect() as conn:
             cur = conn.execute(
                 "SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT ?",
                 (limit,),
             )
             return [_row_to_audit_log(r) for r in cur.fetchall()]
+
+
+db = Database()
