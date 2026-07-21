@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="https://github.com/IndrasishRay/secure-bloomberg-terminal.git"
+REPO_URL="https://github.com/IndrasishRay/secure-bloomberg-terminal-clone.git"
 INSTALL_DIR="${HOME}/.bloomberg-terminal"
 
 GREEN='\033[0;32m'

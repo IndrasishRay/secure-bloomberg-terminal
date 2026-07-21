@@ -7,7 +7,7 @@ A fully functional, Bloomberg-style trading terminal prototype with live market 
 ## One-Line Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/IndrasishRay/secure-bloomberg-terminal/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/IndrasishRay/secure-bloomberg-terminal-clone/main/install.sh | bash
 ```
 
 Then:
