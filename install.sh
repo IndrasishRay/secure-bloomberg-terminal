@@ -15,14 +15,14 @@ echo "  Secure Bloomberg Terminal — Installer"
 echo "═══════════════════════════════════════════"
 echo -e "${NC}"
 
-if ! command -v python3 &>/dev/null; then
-    echo "Error: python3 is required but not installed."
-    echo "Install it from https://www.python.org/downloads/"
-    exit 1
+if ! command -v cargo &>/dev/null; then
+    echo -e "${YELLOW}  Installing Rust (rustup)...${NC}"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    . "$HOME/.cargo/env"
 fi
 
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-echo -e "  Python: ${GREEN}${PYTHON_VERSION}${NC}"
+. "$HOME/.cargo/env"
+echo -e "  Rust: ${GREEN}$(rustc --version)${NC}"
 
 echo ""
 echo "  Installing to: ${INSTALL_DIR}"
@@ -40,30 +40,13 @@ else
 fi
 
 echo ""
-echo -e "${YELLOW}  Setting up virtual environment...${NC}"
+echo -e "${YELLOW}  Building (release mode)...${NC}"
 cd "${INSTALL_DIR}"
-python3 -m venv .venv
-source .venv/bin/activate
+cargo build --release 2>&1 | tail -3
 
-echo -e "${YELLOW}  Installing dependencies...${NC}"
-pip install -q -r requirements.txt
-
-if [ ! -f .env ]; then
-    cp .env.example .env
-    echo -e "  ${GREEN}Created .env with defaults${NC}"
-fi
-
-cat > "${INSTALL_DIR}/bloomberg" << 'SCRIPT'
-#!/usr/bin/env bash
-cd "$(dirname "$0")"
-source .venv/bin/activate 2>/dev/null || true
-export DEV_MODE=1
-exec python3 src/main.py "$@"
-SCRIPT
-chmod +x "${INSTALL_DIR}/bloomberg"
-
+ln -sf "${INSTALL_DIR}/target/release/bloomberg-terminal" "${HOME}/.local/bin/bloomberg" 2>/dev/null || true
 mkdir -p "${HOME}/.local/bin"
-ln -sf "${INSTALL_DIR}/bloomberg" "${HOME}/.local/bin/bloomberg"
+cp "${INSTALL_DIR}/target/release/bloomberg-terminal" "${HOME}/.local/bin/bloomberg"
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════════"
@@ -73,9 +56,6 @@ echo ""
 echo "  Run the terminal with:"
 echo ""
 echo -e "    ${CYAN}bloomberg${NC}"
-echo ""
-echo "  Or from the install directory:"
-echo -e "    ${CYAN}${INSTALL_DIR}/bloomberg${NC}"
 echo ""
 echo "  ⚠  PROTOTYPE NOTICE: This is a demo/prototype."
 echo "     No real bank details, no real trading."

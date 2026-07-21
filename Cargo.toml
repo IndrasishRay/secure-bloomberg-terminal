@@ -1,0 +1,28 @@
+[package]
+name = "bloomberg-terminal"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+pbkdf2 = "0.12"
+aes-gcm = "0.10"
+rand = "0.8"
+rss = "2"
+clap = { version = "4", features = ["derive"] }
+dirs = "5"
+dotenvy = "0.15"
+anyhow = "1"
+thiserror = "1"
+log = "0.4"
+env_logger = "0.11"
+quick-xml = { version = "0.36", features = ["serialize"] }
+hex = "0.4"
