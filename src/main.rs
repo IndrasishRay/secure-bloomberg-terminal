@@ -1,17 +1,8 @@
-mod app;
-mod db;
-mod market;
-mod news;
-mod onboarding;
-mod portfolio;
-mod research;
-mod screens;
-mod security;
-
 use anyhow::Result;
-use db::Database;
-use onboarding::wizard::run_onboarding;
-use security::encryption::Crypto;
+use bloomberg_terminal::app::App;
+use bloomberg_terminal::db::Database;
+use bloomberg_terminal::onboarding::wizard::run_onboarding;
+use bloomberg_terminal::security::encryption::Crypto;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -40,7 +31,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    let mut terminal_app = app::App::new(db);
+    let mut terminal_app = App::new(db);
     terminal_app.run().await?;
 
     log::info!("Bloomberg Terminal terminated");

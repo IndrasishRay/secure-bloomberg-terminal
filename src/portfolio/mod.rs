@@ -88,3 +88,65 @@ impl PortfolioManager {
         self.db.get_portfolio(self.portfolio_id)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::Database;
+    use std::sync::Arc;
+
+    fn setup_db() -> Database {
+        let dir = tempfile::TempDir::new().unwrap();
+        Database::new(&dir.path().join("test.db")).unwrap()
+    }
+
+    #[test]
+    fn test_portfolio_manager_new() {
+        let db = Arc::new(setup_db());
+        let pm = PortfolioManager::new(db, 1);
+        assert_eq!(pm.portfolio_id, 1);
+    }
+
+    #[test]
+    fn test_get_positions_empty() {
+        let db = Arc::new(setup_db());
+        let pf = db.create_portfolio("test", 100_000.0).unwrap();
+        let pm = PortfolioManager::new(db.clone(), pf.id);
+        let positions = pm.get_positions();
+        assert!(positions.is_empty());
+    }
+
+    #[test]
+    fn test_get_trades_empty() {
+        let db = Arc::new(setup_db());
+        let pf = db.create_portfolio("test", 100_000.0).unwrap();
+        let pm = PortfolioManager::new(db.clone(), pf.id);
+        let trades = pm.get_trades();
+        assert!(trades.is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_not_found() {
+        let db = Arc::new(setup_db());
+        let pm = PortfolioManager::new(db.clone(), 999);
+        assert!(pm.get_portfolio().is_none());
+    }
+
+    #[test]
+    fn test_buy_concentration_blocked_before_funds_check() {
+        let db = Arc::new(setup_db());
+        let pf = db.create_portfolio("test", 100.0).unwrap();
+        let pm = PortfolioManager::new(db.clone(), pf.id);
+        let err = pm.buy("AAPL", 10.0, 200.0).unwrap_err();
+        assert!(err.to_string().contains("position would be"));
+    }
+
+    #[test]
+    fn test_sell_no_position() {
+        let db = Arc::new(setup_db());
+        let pf = db.create_portfolio("test", 100_000.0).unwrap();
+        let pm = PortfolioManager::new(db.clone(), pf.id);
+        let err = pm.sell("NONEXIST", 10.0, 150.0).unwrap_err();
+        assert!(err.to_string().contains("position not found"));
+    }
+}
