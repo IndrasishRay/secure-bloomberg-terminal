@@ -9,7 +9,9 @@ pub async fn get_quote(symbol: &str) -> Result<CryptoQuote> {
 
     let market_data = &data["market_data"];
     let price = market_data["current_price"]["usd"].as_f64().unwrap_or(0.0);
-    let change_pct = market_data["price_change_percentage_24h"].as_f64().unwrap_or(0.0);
+    let change_pct = market_data["price_change_percentage_24h"]
+        .as_f64()
+        .unwrap_or(0.0);
     let market_cap = market_data["market_cap"]["usd"].as_f64().unwrap_or(0.0);
     let volume = market_data["total_volume"]["usd"].as_f64().unwrap_or(0.0);
     let name = data["name"].as_str().unwrap_or(symbol).to_string();

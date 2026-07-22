@@ -124,7 +124,10 @@ fn register_user(db: &Database) -> Result<()> {
 fn verify_email(db: &Database) -> Result<()> {
     if let Some((id, _, _, code)) = db.get_user_by_email("demo@bloomberg.local") {
         println!("── Email Verification ──");
-        println!("[DEMO MODE] Code: {}\n", code.as_deref().unwrap_or("000000"));
+        println!(
+            "[DEMO MODE] Code: {}\n",
+            code.as_deref().unwrap_or("000000")
+        );
         print!("Press Enter to verify: ");
         io::stdout().flush()?;
         let mut _input = String::new();
@@ -159,13 +162,31 @@ fn show_tutorial() -> Result<()> {
     println!("── QUICK TUTORIAL ──");
     let steps = [
         ("Welcome", "Welcome to the Bloomberg Terminal Prototype!"),
-        ("Market Overview", "Press [1] to view stocks, [2] for crypto. Use UP/DOWN to navigate."),
-        ("Stock Detail", "Select a stock and press Enter for details. Press Tab to toggle Buy/Sell."),
-        ("Trading", "Press 1-9 to enter quantity, Enter to execute trades."),
-        ("Portfolio", "Press [3] to view your portfolio and trade history."),
+        (
+            "Market Overview",
+            "Press [1] to view stocks, [2] for crypto. Use UP/DOWN to navigate.",
+        ),
+        (
+            "Stock Detail",
+            "Select a stock and press Enter for details. Press Tab to toggle Buy/Sell.",
+        ),
+        (
+            "Trading",
+            "Press 1-9 to enter quantity, Enter to execute trades.",
+        ),
+        (
+            "Portfolio",
+            "Press [3] to view your portfolio and trade history.",
+        ),
         ("News", "Press [4] for financial news headlines."),
-        ("Research", "Press [5] for arXiv quantitative finance papers."),
-        ("Ready!", "You're all set! Use / to search, q to go back, 1-5 to switch screens."),
+        (
+            "Research",
+            "Press [5] for arXiv quantitative finance papers.",
+        ),
+        (
+            "Ready!",
+            "You're all set! Use / to search, q to go back, 1-5 to switch screens.",
+        ),
     ];
 
     for (i, (title, desc)) in steps.iter().enumerate() {

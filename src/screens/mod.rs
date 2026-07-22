@@ -1,8 +1,8 @@
 pub mod market_overview;
-pub mod stock_detail;
-pub mod portfolio_view;
 pub mod news_feed;
+pub mod portfolio_view;
 pub mod research;
+pub mod stock_detail;
 
 use ratatui::layout::Rect;
 use ratatui::Frame;

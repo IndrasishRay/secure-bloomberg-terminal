@@ -158,7 +158,14 @@ fn test_verify_email() {
 #[test]
 fn test_save_and_get_news() {
     let db = setup_db();
-    db.save_news("Market rally", "Reuters", "https://reut.rs/abc", "Stocks surged today", Some("2025-01-15")).unwrap();
+    db.save_news(
+        "Market rally",
+        "Reuters",
+        "https://reut.rs/abc",
+        "Stocks surged today",
+        Some("2025-01-15"),
+    )
+    .unwrap();
     let news = db.get_news(10);
     assert_eq!(news.len(), 1);
     assert_eq!(news[0].title, "Market rally");
@@ -168,7 +175,14 @@ fn test_save_and_get_news() {
 #[test]
 fn test_save_news_without_date() {
     let db = setup_db();
-    db.save_news("Breaking news", "CNBC", "https://cnbc.com/xyz", "Something happened", None).unwrap();
+    db.save_news(
+        "Breaking news",
+        "CNBC",
+        "https://cnbc.com/xyz",
+        "Something happened",
+        None,
+    )
+    .unwrap();
     let news = db.get_news(10);
     assert_eq!(news.len(), 1);
     assert!(news[0].published_at.is_none());
@@ -178,7 +192,8 @@ fn test_save_news_without_date() {
 fn test_get_news_limit() {
     let db = setup_db();
     for i in 0..5 {
-        db.save_news(&format!("News {}", i), "Src", "url", "summary", None).unwrap();
+        db.save_news(&format!("News {}", i), "Src", "url", "summary", None)
+            .unwrap();
     }
     let news = db.get_news(3);
     assert_eq!(news.len(), 3);
@@ -194,7 +209,14 @@ fn test_get_news_empty() {
 #[test]
 fn test_save_and_get_papers() {
     let db = setup_db();
-    db.save_paper("Deep Learning in Finance", "Smith et al.", "We propose a novel approach...", "https://arxiv.org/abs/1234", Some("2025-01-10")).unwrap();
+    db.save_paper(
+        "Deep Learning in Finance",
+        "Smith et al.",
+        "We propose a novel approach...",
+        "https://arxiv.org/abs/1234",
+        Some("2025-01-10"),
+    )
+    .unwrap();
     let papers = db.get_papers(10);
     assert_eq!(papers.len(), 1);
     assert_eq!(papers[0].title, "Deep Learning in Finance");
@@ -204,7 +226,8 @@ fn test_save_and_get_papers() {
 fn test_get_papers_limit() {
     let db = setup_db();
     for i in 0..5 {
-        db.save_paper(&format!("Paper {}", i), "Author", "Abstract", "url", None).unwrap();
+        db.save_paper(&format!("Paper {}", i), "Author", "Abstract", "url", None)
+            .unwrap();
     }
     let papers = db.get_papers(2);
     assert_eq!(papers.len(), 2);
@@ -220,7 +243,8 @@ fn test_get_papers_empty() {
 #[test]
 fn test_log_and_get_audit() {
     let db = setup_db();
-    db.log_audit("LOGIN", "alice", "Successful login", "192.168.1.1").unwrap();
+    db.log_audit("LOGIN", "alice", "Successful login", "192.168.1.1")
+        .unwrap();
     let logs = db.get_audit_logs(10);
     assert_eq!(logs.len(), 1);
     assert_eq!(logs[0].action, "LOGIN");
@@ -239,7 +263,8 @@ fn test_get_audit_logs_empty() {
 fn test_set_bank_details() {
     let db = setup_db();
     let uid = db.create_user("bank@example.com", "hash").unwrap();
-    db.set_bank_details(uid, "Chase", "12345678", "021000021", "checking").unwrap();
+    db.set_bank_details(uid, "Chase", "12345678", "021000021", "checking")
+        .unwrap();
 }
 
 #[test]
@@ -283,7 +308,8 @@ fn test_full_lifecycle() {
     let trade = db.create_trade(pf.id, "AAPL", "buy", 10.0, 150.0).unwrap();
     assert_eq!(trade.status, "filled");
 
-    db.log_audit("TRADE", "user1", "Buy 10 AAPL @ $150", "127.0.0.1").unwrap();
+    db.log_audit("TRADE", "user1", "Buy 10 AAPL @ $150", "127.0.0.1")
+        .unwrap();
 
     db.update_position(pos.id, 5.0, 150.0, 750.0).unwrap();
     let updated_pos = db.get_position(pf.id, "AAPL").unwrap();

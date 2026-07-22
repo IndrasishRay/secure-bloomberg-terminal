@@ -81,13 +81,19 @@ impl Screen for StockDetail {
             .split(area);
 
         if let Some(ref q) = self.quote {
-            let change_color = if q.change >= 0.0 { Color::Green } else { Color::Red };
+            let change_color = if q.change >= 0.0 {
+                Color::Green
+            } else {
+                Color::Red
+            };
             let info = Paragraph::new(vec![
                 Line::from(vec![
                     Span::styled("Price: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
                     Span::styled(
                         format!("${:.2}", q.price),
-                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(Color::Green)
+                            .add_modifier(Modifier::BOLD),
                     ),
                     Span::raw("  "),
                     Span::styled(
@@ -107,10 +113,19 @@ impl Screen for StockDetail {
                     Span::styled(format!("${:.2}", q.low), Style::default().fg(Color::Green)),
                 ]),
                 Line::from(vec![
-                    Span::styled("Prev Close: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
-                    Span::styled(format!("${:.2}", q.prev_close), Style::default().fg(Color::Green)),
+                    Span::styled(
+                        "Prev Close: ",
+                        Style::default().fg(Color::Rgb(0x80, 0x80, 0x80)),
+                    ),
+                    Span::styled(
+                        format!("${:.2}", q.prev_close),
+                        Style::default().fg(Color::Green),
+                    ),
                     Span::raw("  "),
-                    Span::styled("Volume: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
+                    Span::styled(
+                        "Volume: ",
+                        Style::default().fg(Color::Rgb(0x80, 0x80, 0x80)),
+                    ),
                     Span::styled(q.volume.to_string(), Style::default().fg(Color::Green)),
                 ]),
             ])
@@ -120,7 +135,7 @@ impl Screen for StockDetail {
             f.render_widget(info, chunks[0]);
 
             if q.prev_close > 0.0 {
-                let pct = ((q.price / q.prev_close) * 100.0).min(100.0) as f64;
+                let pct = ((q.price / q.prev_close) * 100.0).min(100.0);
                 let gauge = Gauge::default()
                     .block(Block::default().title("Day Range").borders(Borders::ALL))
                     .gauge_style(Style::default().fg(change_color))
@@ -140,8 +155,8 @@ impl Screen for StockDetail {
             f.render_widget(err_w, chunks[4]);
         }
         if let Some(ref msg) = self.message {
-            let msg_w =
-                Paragraph::new(msg.as_str()).style(Style::default().fg(Color::Rgb(0xFF, 0xB0, 0x00)));
+            let msg_w = Paragraph::new(msg.as_str())
+                .style(Style::default().fg(Color::Rgb(0xFF, 0xB0, 0x00)));
             f.render_widget(msg_w, chunks[4]);
         }
 
@@ -160,21 +175,32 @@ impl Screen for StockDetail {
             .title(" Buy ")
             .borders(Borders::ALL)
             .border_style(buy_style);
-        let buy_p = Paragraph::new(if self.buy_amount.is_empty() { "Enter qty..." } else { &self.buy_amount })
-            .block(buy_block);
+        let buy_p = Paragraph::new(if self.buy_amount.is_empty() {
+            "Enter qty..."
+        } else {
+            &self.buy_amount
+        })
+        .block(buy_block);
         f.render_widget(buy_p, chunks[2]);
 
         let sell_block = Block::default()
             .title(" Sell ")
             .borders(Borders::ALL)
             .border_style(sell_style);
-        let sell_p = Paragraph::new(if self.sell_amount.is_empty() { "Enter qty..." } else { &self.sell_amount })
-            .block(sell_block);
+        let sell_p = Paragraph::new(if self.sell_amount.is_empty() {
+            "Enter qty..."
+        } else {
+            &self.sell_amount
+        })
+        .block(sell_block);
         f.render_widget(sell_p, chunks[3]);
 
         let footer = Paragraph::new(" Tab:Toggle buy/sell  Enter:Execute  q:Back ")
             .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
-        f.render_widget(footer, Rect::new(area.x, area.y + area.height - 1, area.width, 1));
+        f.render_widget(
+            footer,
+            Rect::new(area.x, area.y + area.height - 1, area.width, 1),
+        );
 
         f.render_widget(block, area);
     }

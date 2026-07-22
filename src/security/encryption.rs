@@ -49,7 +49,8 @@ impl Crypto {
         let mut nonce_bytes = [0u8; NONCE_LEN];
         OsRng.fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
-        let ct = cipher.encrypt(nonce, plaintext)
+        let ct = cipher
+            .encrypt(nonce, plaintext)
             .map_err(|e| anyhow::anyhow!("encryption failed: {e:?}"))?;
         let mut out = nonce_bytes.to_vec();
         out.extend_from_slice(&ct);
@@ -63,7 +64,8 @@ impl Crypto {
         let (nonce_bytes, ct) = data.split_at(NONCE_LEN);
         let cipher = Aes256Gcm::new_from_slice(&self.key)?;
         let nonce = Nonce::from_slice(nonce_bytes);
-        let pt = cipher.decrypt(nonce, ct)
+        let pt = cipher
+            .decrypt(nonce, ct)
             .map_err(|e| anyhow::anyhow!("decryption failed: {e:?}"))?;
         Ok(pt)
     }

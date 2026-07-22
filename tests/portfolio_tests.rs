@@ -1,6 +1,6 @@
+use bloomberg_terminal::db::Database;
 use bloomberg_terminal::portfolio::PortfolioManager;
 use std::sync::Arc;
-use bloomberg_terminal::db::Database;
 use tempfile::TempDir;
 
 fn setup_db() -> Arc<Database> {

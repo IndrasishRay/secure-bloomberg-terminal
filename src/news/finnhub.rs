@@ -2,9 +2,7 @@ use crate::db::NewsArticle;
 use anyhow::Result;
 
 pub async fn fetch_news(api_key: &str) -> Result<Vec<NewsArticle>> {
-    let url = format!(
-        "https://finnhub.io/api/v1/news?category=general&token={api_key}"
-    );
+    let url = format!("https://finnhub.io/api/v1/news?category=general&token={api_key}");
     let resp = reqwest::get(&url).await?;
     let items: Vec<serde_json::Value> = resp.json().await?;
 
@@ -18,8 +16,7 @@ pub async fn fetch_news(api_key: &str) -> Result<Vec<NewsArticle>> {
             url: item["url"].as_str().unwrap_or("").to_string(),
             summary: item["summary"].as_str().unwrap_or("").to_string(),
             published_at: item["datetime"].as_i64().map(|ts| {
-                let dt = chrono::DateTime::from_timestamp(ts, 0)
-                    .unwrap_or_default();
+                let dt = chrono::DateTime::from_timestamp(ts, 0).unwrap_or_default();
                 dt.format("%Y-%m-%d %H:%M:%S").to_string()
             }),
         })

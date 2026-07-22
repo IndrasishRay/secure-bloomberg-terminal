@@ -10,7 +10,9 @@ use crate::screens::stock_detail::StockDetail;
 use crate::screens::{AppAction, Screen, ScreenId};
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use crossterm::ExecutableCommand;
 use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
@@ -40,7 +42,11 @@ impl App {
         });
         let portfolio_id = portfolio.id;
         let pm = PortfolioManager::new(db.clone(), portfolio_id);
-        App { db, pm, current: AppScreen::Market(MarketOverview::new()) }
+        App {
+            db,
+            pm,
+            current: AppScreen::Market(MarketOverview::new()),
+        }
     }
 
     fn switch_screen(&mut self, id: ScreenId) {
@@ -52,7 +58,8 @@ impl App {
                 self.current = AppScreen::Stock(StockDetail::new(symbol.clone()));
             }
             ScreenId::Portfolio => {
-                self.current = AppScreen::Portfolio(PortfolioView::new(self.db.clone(), self.pm.portfolio_id));
+                self.current =
+                    AppScreen::Portfolio(PortfolioView::new(self.db.clone(), self.pm.portfolio_id));
             }
             ScreenId::News => {
                 self.current = AppScreen::News(NewsFeed::new());
@@ -109,7 +116,8 @@ impl App {
                             }
                             KeyCode::Char('3') => {
                                 self.switch_screen(ScreenId::Portfolio);
-                                self.pm = PortfolioManager::new(self.db.clone(), self.pm.portfolio_id);
+                                self.pm =
+                                    PortfolioManager::new(self.db.clone(), self.pm.portfolio_id);
                                 self.refresh_current().await;
                                 continue;
                             }
@@ -157,10 +165,15 @@ impl App {
                                         if qty > 0.0 {
                                             match self.pm.buy(&sym, qty, price) {
                                                 Ok(_t) => {
-                                                    s.set_message(format!("Bought {:.2} {} @ ${:.2}", qty, sym, price));
+                                                    s.set_message(format!(
+                                                        "Bought {:.2} {} @ ${:.2}",
+                                                        qty, sym, price
+                                                    ));
                                                     self.refresh_current().await;
                                                 }
-                                                Err(e) => s.set_message(format!("Buy failed: {}", e)),
+                                                Err(e) => {
+                                                    s.set_message(format!("Buy failed: {}", e))
+                                                }
                                             }
                                         }
                                     }
@@ -173,10 +186,15 @@ impl App {
                                         if qty > 0.0 {
                                             match self.pm.sell(&sym, qty, price) {
                                                 Ok(_t) => {
-                                                    s.set_message(format!("Sold {:.2} {} @ ${:.2}", qty, sym, price));
+                                                    s.set_message(format!(
+                                                        "Sold {:.2} {} @ ${:.2}",
+                                                        qty, sym, price
+                                                    ));
                                                     self.refresh_current().await;
                                                 }
-                                                Err(e) => s.set_message(format!("Sell failed: {}", e)),
+                                                Err(e) => {
+                                                    s.set_message(format!("Sell failed: {}", e))
+                                                }
                                             }
                                         }
                                     }

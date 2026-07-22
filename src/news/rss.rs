@@ -3,8 +3,14 @@ use anyhow::Result;
 
 const FEEDS: &[(&str, &str)] = &[
     ("Reuters", "https://www.investing.com/rss/news.rss"),
-    ("CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
-    ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories"),
+    (
+        "CNBC",
+        "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    ),
+    (
+        "MarketWatch",
+        "https://feeds.marketwatch.com/marketwatch/topstories",
+    ),
 ];
 
 pub async fn fetch_rss() -> Result<Vec<NewsArticle>> {

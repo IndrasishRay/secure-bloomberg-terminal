@@ -1,5 +1,5 @@
-pub mod yfinance;
 pub mod coingecko;
+pub mod yfinance;
 
 use serde::{Deserialize, Serialize};
 
@@ -36,7 +36,9 @@ pub async fn get_crypto_quote(symbol: &str) -> anyhow::Result<CryptoQuote> {
 }
 
 pub async fn get_top_stocks() -> Vec<StockQuote> {
-    let symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ"];
+    let symbols = [
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ",
+    ];
     let mut quotes = Vec::new();
     for sym in &symbols {
         if let Ok(q) = get_stock_quote(sym).await {
@@ -47,7 +49,16 @@ pub async fn get_top_stocks() -> Vec<StockQuote> {
 }
 
 pub async fn get_top_crypto() -> Vec<CryptoQuote> {
-    let symbols = ["bitcoin", "ethereum", "solana", "cardano", "polkadot", "chainlink", "avalanche", "polygon"];
+    let symbols = [
+        "bitcoin",
+        "ethereum",
+        "solana",
+        "cardano",
+        "polkadot",
+        "chainlink",
+        "avalanche",
+        "polygon",
+    ];
     let mut quotes = Vec::new();
     for sym in &symbols {
         if let Ok(q) = get_crypto_quote(sym).await {
@@ -141,13 +152,24 @@ mod tests {
 
     #[test]
     fn test_top_stocks_list_length() {
-        let symbols = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ"];
+        let symbols = [
+            "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "V", "JNJ",
+        ];
         assert_eq!(symbols.len(), 10);
     }
 
     #[test]
     fn test_top_crypto_list_length() {
-        let symbols = ["bitcoin", "ethereum", "solana", "cardano", "polkadot", "chainlink", "avalanche", "polygon"];
+        let symbols = [
+            "bitcoin",
+            "ethereum",
+            "solana",
+            "cardano",
+            "polkadot",
+            "chainlink",
+            "avalanche",
+            "polygon",
+        ];
         assert_eq!(symbols.len(), 8);
     }
 }

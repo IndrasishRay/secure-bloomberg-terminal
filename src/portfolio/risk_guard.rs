@@ -15,7 +15,13 @@ pub fn reset_for_tests() {
     *LAST_TRADE_DATE.lock().unwrap() = None;
 }
 
-pub fn check_order(portfolio: &Portfolio, symbol: &str, quantity: f64, price: f64, side: &str) -> Result<()> {
+pub fn check_order(
+    portfolio: &Portfolio,
+    symbol: &str,
+    quantity: f64,
+    price: f64,
+    side: &str,
+) -> Result<()> {
     let total = quantity * price;
     let today = Utc::now().format("%Y-%m-%d").to_string();
 
@@ -39,7 +45,9 @@ pub fn check_order(portfolio: &Portfolio, symbol: &str, quantity: f64, price: f6
         let pnl = pnl_lock.get_or_insert_with(HashMap::new);
         let mut date_lock = LAST_TRADE_DATE.lock().unwrap();
         let dates = date_lock.get_or_insert_with(HashMap::new);
-        let date_entry = dates.entry(symbol.to_string()).or_insert_with(|| today.clone());
+        let date_entry = dates
+            .entry(symbol.to_string())
+            .or_insert_with(|| today.clone());
         if *date_entry != today {
             pnl.insert(symbol.to_string(), 0.0);
             *date_entry = today.clone();
@@ -57,7 +65,9 @@ pub fn check_order(portfolio: &Portfolio, symbol: &str, quantity: f64, price: f6
         let counts = counts_lock.get_or_insert_with(HashMap::new);
         let mut date_lock = LAST_TRADE_DATE.lock().unwrap();
         let dates = date_lock.get_or_insert_with(HashMap::new);
-        let date_entry = dates.entry(symbol.to_string()).or_insert_with(|| today.clone());
+        let date_entry = dates
+            .entry(symbol.to_string())
+            .or_insert_with(|| today.clone());
         if *date_entry != today {
             counts.insert(symbol.to_string(), 0);
             *date_entry = today.clone();
@@ -78,7 +88,7 @@ pub fn check_order(portfolio: &Portfolio, symbol: &str, quantity: f64, price: f6
     let min = now.format("%M").to_string().parse::<i32>().unwrap_or(0);
     let minutes = hour * 60 + min;
     let et_minutes = minutes - 300;
-    if cfg!(not(debug_assertions)) && (et_minutes < 570 || et_minutes > 960) {
+    if cfg!(not(debug_assertions)) && !(570..=960).contains(&et_minutes) {
         bail!("markets closed (9:30-16:00 ET)");
     }
 
@@ -141,13 +151,19 @@ mod tests {
 
     #[test]
     fn test_buy_just_under_40_percent_ok() {
-        let p = Portfolio { cash_balance: 100_000.0, ..sample_portfolio() };
+        let p = Portfolio {
+            cash_balance: 100_000.0,
+            ..sample_portfolio()
+        };
         assert!(check_order(&p, "TST_G", 266.0, 150.0, "buy").is_ok());
     }
 
     #[test]
     fn test_sell_not_blocked_by_zero_cash() {
-        let p = Portfolio { cash_balance: 0.0, ..sample_portfolio() };
+        let p = Portfolio {
+            cash_balance: 0.0,
+            ..sample_portfolio()
+        };
         assert!(check_order(&p, "TST_H", 10.0, 150.0, "sell").is_ok());
     }
 

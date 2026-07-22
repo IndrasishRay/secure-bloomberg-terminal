@@ -62,40 +62,59 @@ impl Screen for PortfolioView {
         if let Some(ref p) = self.portfolio {
             let pos_value: f64 = self.positions.iter().map(|p| p.current_value).sum();
             let total = p.cash_balance + pos_value;
-            let summary = Paragraph::new(vec![
-                Line::from(vec![
-                    Span::styled("Cash: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
-                    Span::styled(
-                        format!("${:.2}", p.cash_balance),
-                        Style::default().fg(Color::Green),
-                    ),
-                    Span::raw("  "),
-                    Span::styled("Positions: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
-                    Span::styled(
-                        format!("${:.2}", pos_value),
-                        Style::default().fg(Color::Green),
-                    ),
-                    Span::raw("  "),
-                    Span::styled("Total: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
-                    Span::styled(
-                        format!("${:.2}", total),
-                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-                    ),
-                ]),
-            ])
+            let summary = Paragraph::new(vec![Line::from(vec![
+                Span::styled("Cash: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
+                Span::styled(
+                    format!("${:.2}", p.cash_balance),
+                    Style::default().fg(Color::Green),
+                ),
+                Span::raw("  "),
+                Span::styled(
+                    "Positions: ",
+                    Style::default().fg(Color::Rgb(0x80, 0x80, 0x80)),
+                ),
+                Span::styled(
+                    format!("${:.2}", pos_value),
+                    Style::default().fg(Color::Green),
+                ),
+                Span::raw("  "),
+                Span::styled("Total: ", Style::default().fg(Color::Rgb(0x80, 0x80, 0x80))),
+                Span::styled(
+                    format!("${:.2}", total),
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ])])
             .block(Block::default().borders(Borders::NONE));
             f.render_widget(summary, chunks[0]);
         }
 
         let tabs = Paragraph::new(Line::from(vec![
-            Span::styled(" [1] Holdings ", Style::default().fg(if self.tab == 0 { Color::Rgb(0xFF, 0xB0, 0x00) } else { Color::Green })),
+            Span::styled(
+                " [1] Holdings ",
+                Style::default().fg(if self.tab == 0 {
+                    Color::Rgb(0xFF, 0xB0, 0x00)
+                } else {
+                    Color::Green
+                }),
+            ),
             Span::raw(" | "),
-            Span::styled(" [2] Trade History ", Style::default().fg(if self.tab == 1 { Color::Rgb(0xFF, 0xB0, 0x00) } else { Color::Green })),
+            Span::styled(
+                " [2] Trade History ",
+                Style::default().fg(if self.tab == 1 {
+                    Color::Rgb(0xFF, 0xB0, 0x00)
+                } else {
+                    Color::Green
+                }),
+            ),
         ]));
         f.render_widget(tabs, chunks[1]);
 
         let inner = chunks[2];
-        let hdr = Style::default().fg(Color::Rgb(0xFF, 0xB0, 0x00)).add_modifier(Modifier::BOLD);
+        let hdr = Style::default()
+            .fg(Color::Rgb(0xFF, 0xB0, 0x00))
+            .add_modifier(Modifier::BOLD);
 
         if self.tab == 0 {
             let headers = ["Symbol", "Qty", "Avg Cost", "Value", "P/L"];
@@ -125,14 +144,19 @@ impl Screen for PortfolioView {
             let table = Table::new(
                 rows.iter().map(|r| {
                     ratatui::widgets::Row::new(r.iter().map(|c| {
-                        ratatui::widgets::Cell::new(Span::styled(c, Style::default().fg(Color::Green)))
+                        ratatui::widgets::Cell::new(Span::styled(
+                            c,
+                            Style::default().fg(Color::Green),
+                        ))
                     }))
                 }),
                 widths,
             )
-            .header(ratatui::widgets::Row::new(headers.iter().map(|h| {
-                ratatui::widgets::Cell::new(Span::styled(*h, hdr))
-            })))
+            .header(ratatui::widgets::Row::new(
+                headers
+                    .iter()
+                    .map(|h| ratatui::widgets::Cell::new(Span::styled(*h, hdr))),
+            ))
             .block(Block::default().borders(Borders::NONE))
             .row_highlight_style(Style::default().bg(Color::Rgb(0x1A, 0x3A, 0x1A)));
 
@@ -166,14 +190,19 @@ impl Screen for PortfolioView {
             let table = Table::new(
                 rows.iter().map(|r| {
                     ratatui::widgets::Row::new(r.iter().map(|c| {
-                        ratatui::widgets::Cell::new(Span::styled(c, Style::default().fg(Color::Green)))
+                        ratatui::widgets::Cell::new(Span::styled(
+                            c,
+                            Style::default().fg(Color::Green),
+                        ))
                     }))
                 }),
                 widths,
             )
-            .header(ratatui::widgets::Row::new(headers.iter().map(|h| {
-                ratatui::widgets::Cell::new(Span::styled(*h, hdr))
-            })))
+            .header(ratatui::widgets::Row::new(
+                headers
+                    .iter()
+                    .map(|h| ratatui::widgets::Cell::new(Span::styled(*h, hdr))),
+            ))
             .block(Block::default().borders(Borders::NONE))
             .row_highlight_style(Style::default().bg(Color::Rgb(0x1A, 0x3A, 0x1A)));
 
@@ -182,7 +211,10 @@ impl Screen for PortfolioView {
 
         let footer = Paragraph::new(" 1:Holdings  2:History  q:Back ")
             .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
-        f.render_widget(footer, Rect::new(area.x, area.y + area.height - 1, area.width, 1));
+        f.render_widget(
+            footer,
+            Rect::new(area.x, area.y + area.height - 1, area.width, 1),
+        );
 
         f.render_widget(block, area);
     }

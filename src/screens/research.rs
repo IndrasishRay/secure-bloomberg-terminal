@@ -12,6 +12,12 @@ pub struct Research {
     loading: bool,
 }
 
+impl Default for Research {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Research {
     pub fn new() -> Self {
         Research {
@@ -63,8 +69,8 @@ impl Screen for Research {
 
         f.render_stateful_widget(list, chunks[0], &mut self.state);
 
-        let footer = Paragraph::new(" q:Back ")
-            .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
+        let footer =
+            Paragraph::new(" q:Back ").style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
         f.render_widget(footer, chunks[1]);
 
         f.render_widget(block, area);
@@ -80,7 +86,8 @@ impl Screen for Research {
             }
             crossterm::event::KeyCode::Down => {
                 let i = self.state.selected().unwrap_or(0);
-                self.state.select(Some((i + 1).min(self.papers.len().saturating_sub(1))));
+                self.state
+                    .select(Some((i + 1).min(self.papers.len().saturating_sub(1))));
                 None
             }
             _ => None,

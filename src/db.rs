@@ -196,12 +196,7 @@ impl Database {
             .prepare("SELECT id, password_hash, email_verified, verification_code FROM users WHERE email = ?1")
             .ok()?;
         stmt.query_row(params![email], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-            ))
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
         })
         .ok()
     }
@@ -216,7 +211,14 @@ impl Database {
     }
 
     // Bank
-    pub fn set_bank_details(&self, user_id: i64, name: &str, acct: &str, routing: &str, acct_type: &str) -> Result<()> {
+    pub fn set_bank_details(
+        &self,
+        user_id: i64,
+        name: &str,
+        acct: &str,
+        routing: &str,
+        acct_type: &str,
+    ) -> Result<()> {
         let conn = self.lock();
         conn.execute(
             "INSERT OR REPLACE INTO bank_details (user_id, bank_name, account_number, routing_number, account_type) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -268,7 +270,9 @@ impl Database {
 
     pub fn get_portfolio(&self, id: i64) -> Option<Portfolio> {
         let conn = self.lock();
-        let mut stmt = conn.prepare("SELECT * FROM portfolios WHERE id = ?1").ok()?;
+        let mut stmt = conn
+            .prepare("SELECT * FROM portfolios WHERE id = ?1")
+            .ok()?;
         stmt.query_row(params![id], |row| {
             Ok(Portfolio {
                 id: row.get(0)?,
@@ -291,7 +295,13 @@ impl Database {
     }
 
     // Positions
-    pub fn create_position(&self, portfolio_id: i64, symbol: &str, qty: f64, cost: f64) -> Result<Position> {
+    pub fn create_position(
+        &self,
+        portfolio_id: i64,
+        symbol: &str,
+        qty: f64,
+        cost: f64,
+    ) -> Result<Position> {
         let conn = self.lock();
         let val = (qty * cost * 100.0).round() / 100.0;
         conn.execute(
@@ -373,7 +383,14 @@ impl Database {
     }
 
     // Trades
-    pub fn create_trade(&self, portfolio_id: i64, symbol: &str, side: &str, qty: f64, price: f64) -> Result<Trade> {
+    pub fn create_trade(
+        &self,
+        portfolio_id: i64,
+        symbol: &str,
+        side: &str,
+        qty: f64,
+        price: f64,
+    ) -> Result<Trade> {
         let conn = self.lock();
         conn.execute(
             "INSERT INTO trades (portfolio_id, symbol, side, quantity, price, status) VALUES (?1, ?2, ?3, ?4, ?5, 'filled')",
@@ -419,7 +436,14 @@ impl Database {
     }
 
     // News
-    pub fn save_news(&self, title: &str, source: &str, url: &str, summary: &str, published: Option<&str>) -> Result<i64> {
+    pub fn save_news(
+        &self,
+        title: &str,
+        source: &str,
+        url: &str,
+        summary: &str,
+        published: Option<&str>,
+    ) -> Result<i64> {
         let conn = self.lock();
         conn.execute(
             "INSERT INTO news_articles (title, source, url, summary, published_at) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -449,7 +473,14 @@ impl Database {
     }
 
     // Research
-    pub fn save_paper(&self, title: &str, authors: &str, abstract_: &str, url: &str, published: Option<&str>) -> Result<i64> {
+    pub fn save_paper(
+        &self,
+        title: &str,
+        authors: &str,
+        abstract_: &str,
+        url: &str,
+        published: Option<&str>,
+    ) -> Result<i64> {
         let conn = self.lock();
         conn.execute(
             "INSERT INTO research_papers (title, authors, abstract_, url, published_at) VALUES (?1, ?2, ?3, ?4, ?5)",

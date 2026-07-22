@@ -12,6 +12,12 @@ pub struct NewsFeed {
     loading: bool,
 }
 
+impl Default for NewsFeed {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NewsFeed {
     pub fn new() -> Self {
         NewsFeed {
@@ -68,8 +74,8 @@ impl Screen for NewsFeed {
 
         f.render_stateful_widget(list, chunks[0], &mut self.state);
 
-        let footer = Paragraph::new(" q:Back ")
-            .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
+        let footer =
+            Paragraph::new(" q:Back ").style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
         f.render_widget(footer, chunks[1]);
 
         f.render_widget(block, area);
@@ -85,7 +91,8 @@ impl Screen for NewsFeed {
             }
             crossterm::event::KeyCode::Down => {
                 let i = self.state.selected().unwrap_or(0);
-                self.state.select(Some((i + 1).min(self.articles.len().saturating_sub(1))));
+                self.state
+                    .select(Some((i + 1).min(self.articles.len().saturating_sub(1))));
                 None
             }
             _ => None,

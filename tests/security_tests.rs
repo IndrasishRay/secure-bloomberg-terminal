@@ -1,5 +1,5 @@
-use bloomberg_terminal::security::encryption::Crypto;
 use bloomberg_terminal::db::Database;
+use bloomberg_terminal::security::encryption::Crypto;
 use tempfile::TempDir;
 
 #[test]
@@ -112,7 +112,8 @@ fn test_password_hash_long_input() {
 fn test_audit_log_in_db() {
     let dir = TempDir::new().unwrap();
     let db = Database::new(&dir.path().join("audit.db")).unwrap();
-    db.log_audit("LOGIN", "test_user", "test login", "10.0.0.1").unwrap();
+    db.log_audit("LOGIN", "test_user", "test login", "10.0.0.1")
+        .unwrap();
     let logs = db.get_audit_logs(10);
     assert_eq!(logs.len(), 1);
     assert_eq!(logs[0].action, "LOGIN");
@@ -125,7 +126,8 @@ fn test_audit_log_multiple_entries() {
     let dir = TempDir::new().unwrap();
     let db = Database::new(&dir.path().join("audit.db")).unwrap();
     for i in 0..5 {
-        db.log_audit(&format!("ACTION_{}", i), "user", "details", "127.0.0.1").unwrap();
+        db.log_audit(&format!("ACTION_{}", i), "user", "details", "127.0.0.1")
+            .unwrap();
     }
     let logs = db.get_audit_logs(10);
     assert_eq!(logs.len(), 5);

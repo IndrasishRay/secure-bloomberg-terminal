@@ -6,13 +6,19 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState};
 use ratatui::Frame;
 
+#[allow(dead_code)]
 pub struct MarketOverview {
     stocks: Vec<StockQuote>,
     crypto: Vec<CryptoQuote>,
     state: TableState,
     tab: usize,
     loading: bool,
-    error: Option<String>,
+}
+
+impl Default for MarketOverview {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MarketOverview {
@@ -23,7 +29,6 @@ impl MarketOverview {
             state: TableState::default(),
             tab: 0,
             loading: true,
-            error: None,
         }
     }
 
@@ -51,13 +56,31 @@ impl Screen for MarketOverview {
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Min(0)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Length(3),
+                Constraint::Min(0),
+            ])
             .split(area);
 
         let tabs = Paragraph::new(Line::from(vec![
-            Span::styled(" [1] Stocks ", Style::default().fg(if self.tab == 0 { Color::Rgb(0xFF, 0xB0, 0x00) } else { Color::Green })),
+            Span::styled(
+                " [1] Stocks ",
+                Style::default().fg(if self.tab == 0 {
+                    Color::Rgb(0xFF, 0xB0, 0x00)
+                } else {
+                    Color::Green
+                }),
+            ),
             Span::raw(" | "),
-            Span::styled(" [2] Crypto ", Style::default().fg(if self.tab == 1 { Color::Rgb(0xFF, 0xB0, 0x00) } else { Color::Green })),
+            Span::styled(
+                " [2] Crypto ",
+                Style::default().fg(if self.tab == 1 {
+                    Color::Rgb(0xFF, 0xB0, 0x00)
+                } else {
+                    Color::Green
+                }),
+            ),
         ]))
         .block(Block::default().borders(Borders::NONE));
 
@@ -121,7 +144,9 @@ impl Screen for MarketOverview {
             )
             .header(
                 ratatui::widgets::Row::new(
-                    headers.iter().map(|h| ratatui::widgets::Cell::new(Span::styled(*h, header_style))),
+                    headers
+                        .iter()
+                        .map(|h| ratatui::widgets::Cell::new(Span::styled(*h, header_style))),
                 )
                 .height(1),
             )
@@ -180,7 +205,9 @@ impl Screen for MarketOverview {
             )
             .header(
                 ratatui::widgets::Row::new(
-                    headers.iter().map(|h| ratatui::widgets::Cell::new(Span::styled(*h, header_style))),
+                    headers
+                        .iter()
+                        .map(|h| ratatui::widgets::Cell::new(Span::styled(*h, header_style))),
                 )
                 .height(1),
             )
@@ -190,10 +217,8 @@ impl Screen for MarketOverview {
             f.render_stateful_widget(table, inner, &mut self.state);
         }
 
-        let footer = Paragraph::new(
-            " [1] Stocks  [2] Crypto  Enter:Select  /:Search  q:Quit ",
-        )
-        .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
+        let footer = Paragraph::new(" [1] Stocks  [2] Crypto  Enter:Select  /:Search  q:Quit ")
+            .style(Style::default().fg(Color::Rgb(0x55, 0x55, 0x55)));
         f.render_widget(footer, chunks[0]);
 
         f.render_widget(block, area);
@@ -222,13 +247,22 @@ impl Screen for MarketOverview {
                 sym.map(|s| AppAction::SwitchScreen(ScreenId::StockDetail(s)))
             }
             crossterm::event::KeyCode::Up => {
-                let n = if self.tab == 0 { self.stocks.len() } else { self.crypto.len() };
+                let n = if self.tab == 0 {
+                    self.stocks.len()
+                } else {
+                    self.crypto.len()
+                };
                 let i = self.state.selected().unwrap_or(0);
-                self.state.select(Some(i.saturating_sub(1).min(n.saturating_sub(1))));
+                self.state
+                    .select(Some(i.saturating_sub(1).min(n.saturating_sub(1))));
                 None
             }
             crossterm::event::KeyCode::Down => {
-                let n = if self.tab == 0 { self.stocks.len() } else { self.crypto.len() };
+                let n = if self.tab == 0 {
+                    self.stocks.len()
+                } else {
+                    self.crypto.len()
+                };
                 let i = self.state.selected().unwrap_or(0);
                 self.state.select(Some((i + 1).min(n.saturating_sub(1))));
                 None
